@@ -3,7 +3,7 @@ import logging
 
 class CowDevice(gatt.Device):
     SERVICE_UUID = "0000cd00-caa9-44b2-8b43-96ae3072fd3"
-    CHARACTERISTIC_TO_UUID = {
+    CHARACTERISTIC_NAME_TO_UUID = {
         "led": r"0000cd01-caa9-44b2-8b43-96ae3072fd36",
         "time": r"0000cd02-caa9-44b2-8b43-96ae3072fd36",
         "date": r"0000cd03-caa9-44b2-8b43-96ae3072fd36",
@@ -13,7 +13,7 @@ class CowDevice(gatt.Device):
         "error": r"0000cd07-caa9-44b2-8b43-96ae3072fd36",
         "password": r"0000cd08-caa9-44b2-8b43-96ae3072fd36",
     }
-    UUID_TO_CHARACTERISTIC = {
+    UUID_TO_CHARACTERISTIC_NAME = {
         r"0000cd01-caa9-44b2-8b43-96ae3072fd36": "led" ,
         r"0000cd02-caa9-44b2-8b43-96ae3072fd36": "time",
         r"0000cd03-caa9-44b2-8b43-96ae3072fd36": "date",
@@ -24,51 +24,54 @@ class CowDevice(gatt.Device):
        r"0000cd08-caa9-44b2-8b43-96ae3072fd36": "password",
     }
 
-    def __init__(self, mac_address, manager, managed=True):
-        gatt.Device.__init__(self,mac_address, manager, managed)
+    def __init__(self, mac_address, manager, managed=True, password=None):
+        gatt.Device.__init__(self, mac_address, manager, managed)
+        self.password = password
 
         self.logger = logging.getLogger('cowdevice')
         self.logger.setLevel(logging.DEBUG)
         ch = logging.StreamHandler()
         ch.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('[{}] %(levelname)s - %(message)s'.format(self.mac_address))
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
 
         self.characteristics = {}
 
     def connect_succeeded(self):
-        super().connect_succeeded()
-        self.logger.error("[%s] Connected" % (self.mac_address))
+        self.logger.info("Connected")
 
     def connect_failed(self, error):
-        super().connect_failed(error)
-        self.logger.error("[%s] Connection failed: %s" % (self.mac_address, str(error)))
+        self.logger.error("Connection failed: %s", error)
 
-    def disconnect_succeeded(sself):
+    def disconnect_succeeded(self):
         super().disconnect_succeeded()
-        self.logger.info("[%s] Disconnected" % (self.mac_address))
+        self.logger.info("Disconnected")
+        
+    def disconnect_failed(self):
+        super().disconnect_succeeded()
+        self.logger.error("Disconnect failed")
 
     def services_resolved(self):
         super().services_resolved()
         self.parse_servieces()
 
         self.read_all()
-        self.set_led(False)
-        self.set_time(4, 23, 1)
-        self.set_date(12, 4, 4)
+        if self.password is not None:
+            self.authenticate(self.password)
 
     def parse_servieces(self):
-        self.logger.debug("[%s] Resolved services" % (self.mac_address))
+        self.logger.debug("Resolved services")
         for service in self.services:
-            self.logger.debug("[%s]  Service [%s]" % (self.mac_address, service.uuid))
+            self.logger.debug("Service [%s]",  service.uuid)
             for characteristic in service.characteristics:
-                self.logger.debug("[%s]    Characteristic [%s]" % (self.mac_address, characteristic.uuid))
-                name = self.UUID_TO_CHARACTERISTIC[characteristic.uuid]
+                self.logger.debug("  Characteristic [%s]", characteristic.uuid)
+                name = self.UUID_TO_CHARACTERISTIC_NAME[characteristic.uuid]
                 self.characteristics[name] = characteristic
-
+        
     def characteristic_value_updated(self, characteristic, value):
-        name = self.UUID_TO_CHARACTERISTIC[characteristic.uuid]
+        name = self.UUID_TO_CHARACTERISTIC_NAME[characteristic.uuid]
         method_name = ("on_%s_update" % name)
         if method_name in dir(self):
              getattr(self, method_name)(characteristic, value)
@@ -133,17 +136,28 @@ class CowDevice(gatt.Device):
             raise ValueError("Day out of range <0, 31>")
         if month > 12 or month < 0:
             raise ValueError("Month out of range <0, 12>")
-        if year > 99 or year < 0:
-            raise ValueError("Year out of range <0, 99>")
+        if year > 99 or year < 18:
+            raise ValueError("Year out of range <18, 99>")
 
         value = '{:02}/{:02}/{:02}'.format(day, month, year)
         self.characteristics['date'].write_value(value.encode('ascii'))
 
     def characteristic_write_value_succeeded(self, characteristic):
-        name = self.UUID_TO_CHARACTERISTIC[characteristic.uuid]
+        name = self.UUID_TO_CHARACTERISTIC_NAME[characteristic.uuid]
         self.logger.debug("Write for %s succeded", name)
+        if name == "password":
+            self.on_device_ready_for_write()
 
     def characteristic_write_value_failed(self, characteristic, error):
-        name = self.UUID_TO_CHARACTERISTIC[characteristic.uuid]
+        name = self.UUID_TO_CHARACTERISTIC_NAME[characteristic.uuid]
         self.logger.error("Write for %s failed: %s", name, error)
 
+    def on_device_ready_for_write(self):
+        self.logger.info("Device ready for write")
+        # self.set_time(4, 23, 1)
+        # self.set_date(12, 12, 20)
+        self.set_led(False)
+
+    def authenticate(self, password:str):
+        self.logger.info("Disconnect failed")
+        self.characteristics['password'].write_value(password.encode('ascii'))
