@@ -45,9 +45,8 @@ def check_password(value):
 # args = parser.parse_args()
 # print(args)
 
-
-
-
+# args = parser.parse_args()
+# print(args)
 mac = "ca:2c:83:fe:72:48"
 print("Connecting...")
 
