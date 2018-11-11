@@ -9,6 +9,7 @@ services:
         type: "number"
         choices: [0, 1]
         help: "switch device's led state: 0 -- off, 1 -- on"
+        password_protected: false
 
       time:
         uuid: "0000cd02-caa9-44b2-8b43-96ae3072fd36"
