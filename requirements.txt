@@ -1,2 +1,4 @@
+bluez\[ble\]
 gatt
 pyyaml 
+pytest
