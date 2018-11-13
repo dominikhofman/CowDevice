@@ -1,0 +1,75 @@
+description: "Cow device handler"
+services:
+  generic:
+    uuid: "0000cd00-caa9-44b2-8b43-96ae3072fd36"
+    characteristics:
+      led:
+        uuid: "0000cd01-caa9-44b2-8b43-96ae3072fd36"
+        flags: ["-l", "--led"]
+        type: "number"
+        choices: [0, 1]
+        help: "switch device's led state: 0 -- off, 1 -- on"
+        password_protected: false
+
+      time:
+        uuid: "0000cd02-caa9-44b2-8b43-96ae3072fd36"
+        flags: ["-t", "--time"]
+        type: "string"
+        encoding: "ascii"
+        re: "^\\d\\d:\\d\\d:\\d\\d$"
+        help: "set device's time, format: HH/MM/SS with leading zeros"
+
+      date:
+        uuid: "0000cd03-caa9-44b2-8b43-96ae3072fd36"
+        flags: ["-d", "--date"]
+        type: "string"
+        encoding: "ascii"
+        re: "^\\d\\d/\\d\\d/\\d\\d$"
+        help: "set device's date, format: DD/MM/YY with leading zeros. YY >= 18"
+
+      tx_power:
+        uuid: "0000cd04-caa9-44b2-8b43-96ae3072fd36"
+        flags: ["-p", "--txpower"]
+        type: "number"
+        signed: true
+        choices: [4, 3, 0, -4, -8, -12, -16, -20, -40]
+        help: "set device's TxPower in dBm"
+
+      adv_interval:
+        uuid: "0000cd05-caa9-44b2-8b43-96ae3072fd36"
+        flags: ["-a", "--adv_interval2"]
+        type: "number"
+        length: 2
+        order: "little"
+        help: "set device's adv_interval in ms, min 250, max 10240"
+
+      switch:
+        uuid: "0000cd06-caa9-44b2-8b43-96ae3072fd36"
+        flags: ["-s", "--switch"]
+        type: number
+        choices: [0, 1, 2]
+        help: "switch device's state: 0 -- off, 1 -- normal mode, 2 -- allways run"
+
+    special:
+      error:
+        uuid: "0000cd07-caa9-44b2-8b43-96ae3072fd36"
+        errors:
+          - bitmask: 0
+            message: "BATT"
+          - bitmask: 1
+            message: "TIMER"
+          - bitmask: 2
+            message: "GATT"
+          - bitmask: 3
+            message: "RADIO"
+          - bitmask: 4
+            message: "MAG"
+          - bitmask: 5
+            message: "ACC"
+          - bitmask: 6
+            message: "RTC"
+          - bitmask: 7
+            message: "SD"
+      password:
+        uuid: "0000cd08-caa9-44b2-8b43-96ae3072fd36"
+        help: "provide password, max 20 len"
