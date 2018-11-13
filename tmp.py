@@ -1,39 +1,5 @@
-# c++
-# switch(smth): {
-#     case "a":
-#        funca();
-#        break;
-#     case "b":
-#        funcb();
-#        break;
-       
-#     case "c":
-#        funcc();
-#        break;
-
-#     default:
-#        funcd();
-#        break;
-# }
-
-# python
-from collections import defaultdict
-def funca():
-    print('a')
-
-def funcb():
-    print('b')
-
-def funcd():
-    print('d')
 
 
-d = {
-   'a': funca,
-   'b': funca,
-   'c': lambda : print('c'),
-}
-
-smth = 't'
-
-d.get(smth, funcd)()
+# $ pip wheel --wheel-dir=/tmp/wheelhouse SomePackage
+# $ pip install --no-index --find-links=/tmp/wheelhouse SomePackage
+# https://pip.pypa.io/en/stable/reference/pip_wheel/

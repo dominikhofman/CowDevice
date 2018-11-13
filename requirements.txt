@@ -1,4 +1,4 @@
-bluez\[ble\]
+pybluez[ble]
 gatt
 pyyaml 
 pytest
