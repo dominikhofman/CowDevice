@@ -11,19 +11,15 @@ with open('services.yml', 'r') as f:
 cmd_handler = CmdHandler(config)
 logger = logging.getLogger('cowdevice')
 logger.setLevel(cmd_handler.verbosity)
-
-# print(cmd_handler.characteristics)
 manager = gatt.DeviceManager(adapter_name=cmd_handler.adapter_name)
 cow_device = CowDevice(
     mac_address=cmd_handler.mac_address, 
     manager=manager, 
-    characteristics=cmd_handler.get_characteristics_dict(),
-    password=cmd_handler.password,
+    characteristics=cmd_handler.characteristics_menager,
     read_all=cmd_handler.read_all, 
     service_uuid=config['services']['generic']['uuid']
     )
 
 cow_device.connect()
 
-manager.run() # TODO move this to own thread
-# TODO 
+manager.run() 

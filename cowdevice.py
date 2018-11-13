@@ -2,9 +2,8 @@ import gatt
 import logging
 
 class CowDevice(gatt.Device):
-    def __init__(self, mac_address, manager, service_uuid, managed=True, characteristics=None, password=None, read_all=False):
+    def __init__(self, mac_address, manager, service_uuid, managed=True, characteristics=None, read_all=False):
         gatt.Device.__init__(self, mac_address, manager, managed)
-        self.password = password
         self.characteristics = characteristics
         self.read_all_switch = read_all
         self.service_uuid = service_uuid
@@ -16,6 +15,8 @@ class CowDevice(gatt.Device):
         formatter = logging.Formatter('%(levelname)s - %(message)s')
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
+        self.read_counter = 0
+        self.write_counter = 0
 
     def connect(self):
         self.logger.info('Connecting to %s...', self.mac_address)
@@ -40,14 +41,22 @@ class CowDevice(gatt.Device):
         self.parse_servieces()
 
         if self.read_all_switch:
-            self.read_all()
+            for c in self.characteristics.get_resolved():
+                c.read()
+                self.read_counter += 1
+            self.characteristics.error.read()
+            self.read_counter += 1
         
         for c in self.characteristics.get_for_writing_with_no_password_protected():
             c.write()
+            self.write_counter += 1
 
-        if self.password is not None:
+        if self.characteristics.password.desired_value is not None:
             self.logger.debug('Sending password...')
-            self.characteristics.get_by_name('password').write()
+            self.characteristics.password.write()
+            self.write_counter += 1
+
+        self.check_stop_condition()
 
     def parse_servieces(self):
         self.logger.debug("Resolved services")
@@ -55,7 +64,7 @@ class CowDevice(gatt.Device):
             service = [service for service in self.services if service.uuid == self.service_uuid][0]
             for ble_characteristic in service.characteristics:
                 uuid = ble_characteristic.uuid
-                if uuid not in self.characteristics.characteristics:
+                if uuid not in self.characteristics:
                     self.logger.warning("Characteristic [%s] not specified in services.yml!", uuid)
                 else:
                     self.characteristics[uuid].ble_characteristic = ble_characteristic
@@ -72,23 +81,32 @@ class CowDevice(gatt.Device):
         char.value = value
         self.logger.info('%s updated', char)
         print("%s: %s" % (char.name, char.value))
+        self.read_counter -= 1
+        self.check_stop_condition()
 
-    def read_all(self):
-        for characteristic in self.characteristics.values():
-            if characteristic.ble_characteristic is not None:
-                characteristic.read()
         
     def characteristic_write_value_succeeded(self, characteristic):
         name = self.characteristics[characteristic.uuid].name
         self.logger.debug("Write for %s succeded", name)
         if name == "password":
             self.password_accepted()
+        self.write_counter -= 1
+        self.check_stop_condition()
 
     def characteristic_write_value_failed(self, characteristic, error):
         name = self.characteristics[characteristic.uuid].name
         self.logger.error("Write for %s failed: %s", name, error)
+        self.write_counter -= 1
+        self.check_stop_condition()
 
     def password_accepted(self):
         self.logger.info("Writing password protected characteristics...")
         for c in self.characteristics.get_for_writing_with_password_protected():
+            self.logger.debug("Writing %s", c.name)
             c.write()
+            self.write_counter += 1
+
+    def check_stop_condition(self):
+        if self.read_counter == 0 and self.write_counter == 0:
+            self.manager.stop()
+

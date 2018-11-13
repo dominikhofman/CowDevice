@@ -111,7 +111,7 @@ class PasswordCharacteristic(BasicCharacteristic):
         self.password_protected = False
 
     def add_argument(self, argparesr):
-        pass
+        argparesr.add_argument('--password', dest='password', help="password")
 
     def read(self):
         pass
@@ -132,11 +132,25 @@ class PasswordRequiredException(Exception):
     pass
 
 class CharacteristicMenager(dict):
-    def __init__(self, characteristics):
-        self.characteristics = characteristics
+    def __init__(self, characteristics, password, error):
+        self.characteristics_by_name = characteristics
+        self.characteristics = {characteristic.uuid: characteristic for characteristic in characteristics.values()} 
+        self.password = password
+        self.error = error
 
     def __getitem__(self, key):
+        if key == self.error.uuid:
+            return self.error
+        if key == self.password.uuid:
+            return self.password
         return self.characteristics[key]
+
+    def __contains__(self, item):
+        if item == self.error.uuid:
+            return True
+        if item == self.password.uuid:
+            return True
+        return item in self.characteristics
 
     def values(self):
         return self.characteristics.values()
@@ -145,7 +159,7 @@ class CharacteristicMenager(dict):
         return self.characteristics.items()
 
     def get_by_name(self, name):
-        return [c for c in self.characteristics.values() if c.name == name][0]
+        return self.characteristics_by_name[name]
 
     def get_for_writing_with_password_protected(self):
         return [c for c in self.characteristics.values() if c.desired_value is not None and c.password_protected ]
@@ -156,6 +170,17 @@ class CharacteristicMenager(dict):
     def get_unresolved(self):
         return [c for c in self.characteristics.values() if c.ble_characteristic is None]
 
+    def get_resolved(self):
+        return [c for c in self.characteristics.values() if c.ble_characteristic is not None]
+
+    def get_all(self):
+        copy = self.characteristics.copy()
+        copy[self.password.uuid] = self.password
+        copy[self.error.uuid] = self.error
+        return copy
+
+
+
 class CmdHandler(object):
     """
     generate characteristics based on config file and command line arguments
@@ -163,24 +188,23 @@ class CmdHandler(object):
     def __init__(self, config):
         self.config = config
         self.parser = ArgumentParser(description=config["description"])
-        self.characteristics = None
         self.create_characteristics()
-        self.add_special_arguments()
-        self.add_characteristics_arguments()
+        self.add_arguments()
         self.parse()
 
     def create_characteristics(self):
-        self.characteristics = {}
+        characteristics = {}
         for name, config in self.config['services']['generic']['characteristics'].items():
             if config.get('type', 'number') == 'number':
-                self.characteristics[name] = NumberCharacteristic(name, config)
+                characteristics[name] = NumberCharacteristic(name, config)
             elif config['type'] == 'string':
-                self.characteristics[name] = StringCharacteristic(name, config)
+                characteristics[name] = StringCharacteristic(name, config)
         
-        self.characteristics['error'] = ErrorCharacteristic(self.config['services']['generic']['special']['error'])
-        self.characteristics['password'] = PasswordCharacteristic(self.config['services']['generic']['special']['password'])
+        password = PasswordCharacteristic(self.config['services']['generic']['special']['password'])
+        error = ErrorCharacteristic(self.config['services']['generic']['special']['error'])
+        self.characteristics_menager = CharacteristicMenager(characteristics, password, error)
 
-    def add_special_arguments(self):
+    def add_arguments(self):
         self.parser.add_argument('mac_address', type=check_mac, 
             help="MAC address of cowdevice to connect, format: hexdigits separated by colon or dash")
         
@@ -190,35 +214,29 @@ class CmdHandler(object):
         self.parser.add_argument('--adapter-name', dest='adapter_name', default="hci0",
             help="bluetooth adapter name, default hci0")
 
-        self.parser.add_argument('--password', dest='password',
-            help="password")
+        self.characteristics_menager.password.add_argument(self.parser)
 
         group = self.parser.add_mutually_exclusive_group()
         group.add_argument('-v', action='store_const', const=logging.WARN, dest='verbosity')
         group.add_argument('-vv', action='store_const', const=logging.INFO, dest='verbosity')
         group.add_argument('-vvv', action='store_const', const=logging.DEBUG, dest='verbosity')
-    
-    def add_characteristics_arguments(self):
-        for characteristic in self.characteristics.values():
-            characteristic.add_argument(self.parser)
 
+        for characteristic in self.characteristics_menager.values():
+            characteristic.add_argument(self.parser)
+    
     def parse(self):
         args = self.parser.parse_args()
         self.set_verbosity(args.verbosity)
         self.mac_address = args.mac_address
         self.adapter_name = args.adapter_name
-        self.password = args.password
         self.read_all = args.read_all
-        for name, characteristic in self.characteristics.items(): 
+        for name, characteristic in self.characteristics_menager.characteristics_by_name.items(): 
             characteristic.desired_value = args.__dict__.get(name, None)
-        
-        if self.password is None and True in [c.password_protected for c in self.characteristics.values() if c.desired_value is not None]:
+
+        self.characteristics_menager.password.desired_value = args.password
+        if args.password is None and self.characteristics_menager.get_for_writing_with_password_protected():
             raise PasswordRequiredException("Password required!")
 
 
     def set_verbosity(self, verbosity):
         self.verbosity = verbosity if verbosity is not None else logging.ERROR
-
-    def get_characteristics_dict(self):
-        return CharacteristicMenager({characteristic.uuid: characteristic for characteristic in self.characteristics.values()})
-    
