@@ -11,6 +11,7 @@ def check_mac(value):
 class PasswordRequiredException(Exception):
     pass
 
+
 class CmdHandler(object):
     """
     generate characteristics based on config file and command line arguments
