@@ -1,5 +1,6 @@
 import gatt
 import logging
+import sys
 
 class CowDevice(gatt.Device):
     def __init__(self, mac_address, manager, service_uuid, managed=True, characteristics=None, read_all=False):
@@ -21,14 +22,18 @@ class CowDevice(gatt.Device):
 
     def connect_failed(self, error):
         self.logger.error("Connection failed: %s", error)
+        sys.exit(1)
 
     def disconnect_succeeded(self):
         super().disconnect_succeeded()
         self.logger.info("Disconnected")
+        self.manager.stop()
+
         
     def disconnect_failed(self):
         super().disconnect_succeeded()
         self.logger.error("Disconnect failed")
+        self.manager.stop()
 
     def services_resolved(self):
         super().services_resolved()
@@ -103,5 +108,5 @@ class CowDevice(gatt.Device):
 
     def check_stop_condition(self):
         if self.read_counter == 0 and self.write_counter == 0:
-            self.manager.stop()
+            self.disconnect()
 
