@@ -1,4 +1,4 @@
-description: "Cow device handler"
+description: "Cow device tool"
 services:
   generic:
     uuid: "0000cd00-caa9-44b2-8b43-96ae3072fd36"
@@ -46,7 +46,7 @@ services:
       switch:
         uuid: "0000cd06-caa9-44b2-8b43-96ae3072fd36"
         flags: ["-s", "--switch"]
-        type: number
+        type: "number"
         choices: [0, 1, 2]
         help: "switch device's state: 0 -- off, 1 -- normal mode, 2 -- allways run"
 

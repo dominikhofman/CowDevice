@@ -1,4 +1,5 @@
 pybluez[ble]
 gatt
 pyyaml 
-pytest
+pytests
+paho-mqtt

@@ -1,14 +1,12 @@
 import logging
-import yaml
 import gatt
 from argparse import ArgumentParser
 from cmdhandler import CmdHandler
 from cowdevice import CowDevice
 from characteristicsmenager import CharacteristicsMenager
+from utils import get_config
 
-config = {}
-with open('services.yml', 'r') as f:
-    config = yaml.load(f)
+config = get_config("services.yml")
 
 parser = ArgumentParser(description=config["description"])
 
