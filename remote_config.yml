@@ -1,8 +1,8 @@
 mqtt_config:
   host: 192.168.1.6
   port: 1883
-  name: "" # leave empty ('') to use hostname
+  name: "" # leave empty ("") to use hostname
   auto_reconnect: true
-  reconnect_delay: 10
-  keep_alive: 60
+  reconnect_delay: 10 # in seconds
+  keep_alive: 60 # in seconds
   debug_level: 10 # 10 - debug, 20 - info, 40 - error
