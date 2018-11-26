@@ -45,7 +45,7 @@ class NumberCharacteristic(BasicCharacteristic):
         self.ble_characteristic.write_value(value)
 
     def __str__(self):
-        return "<NumberCharacteristic {name} desired_value:{desired_value} value:{value}>".format(value=self.value, **self.__dict__)
+        return "<NumberCharacteristic {name} value:{value} desired_value {desired_value}>".format(value=self.value, **self.__dict__)
 
 class StringCharacteristic(BasicCharacteristic):
     def __init__(self, name, config):
@@ -78,7 +78,7 @@ class StringCharacteristic(BasicCharacteristic):
         self.ble_characteristic.write_value(self.desired_value.encode(self.encoding))
 
     def __str__(self):
-        return "<StringCharacteristic {name} desired_value:{desired_value} value:{value}>".format(value=self.value, **self.__dict__)
+        return "<StringCharacteristic {name} value:{value}> desired_value:{desired_value}".format(value=self.value, **self.__dict__)
 
 
 class ErrorCharacteristic(BasicCharacteristic):
@@ -119,8 +119,6 @@ class PasswordCharacteristic(BasicCharacteristic):
 
     def write(self):
         self.ble_characteristic.write_value(self.desired_value.encode('ascii'))
-
-
 
 
 class CharacteristicsMenager(object):
