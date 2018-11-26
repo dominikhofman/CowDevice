@@ -85,12 +85,14 @@ class Task(object):
         self.stdout = ''
         self.stderr = ''
         self.cmd = None
+        self.id = random.randint(0, 10000)
+        self.password = None
 
         try:
             self.taskd = json.loads(task.decode('ascii'))
+            self.password = self.taskd.get('password', None)
             self.prepare_cmd()
             if 'id' not in self.taskd:
-                self.id = random.randint(0, 10000)
                 logger.info('No "id" key in task, assigning random (%s)', self.id)
             else:
                 self.id = self.taskd['id']
@@ -102,7 +104,7 @@ class Task(object):
 
         except KeyError as e:
             self.returncode = -2
-            self.stderr = "Key %s not found in task" % e
+            self.stderr = "Required key %s not found in task" % e
             self.logger.error(self.stderr)
 
         except Exception as e:
@@ -113,14 +115,16 @@ class Task(object):
     def prepare_cmd(self):
         self.logger.debug('Preparing commad')
         self.cmd = "sudo python3 dynamictool.py {mac} {args}".format(**self.taskd).strip()
+        if self.password:
+            self.cmd += " --password {}".format(self.password)
 
     def execute(self):
         if self.cmd:
             self.logger.info('Executing command: %s', self.cmd)
             result = subprocess.run(self.cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self.returncode = result.returncode
-            self.stdout = result.stdout
-            self.stderr = result.stderr
+            self.stdout = result.stdout.decode('ascii')
+            self.stderr = result.stderr.decode('ascii')
         else:
             self.logger.debug('Command not valid, skipping')
         return self.get_response()
@@ -129,8 +133,8 @@ class Task(object):
         return {
             "id": self.id,
             "returncode": self.returncode,
-            "stdout": self.stdout.decode('ascii'),
-            "stderr": self.stderr.decode('ascii'),
+            "stdout": self.stdout,
+            "stderr": self.stderr,
         }
 
 
@@ -139,7 +143,7 @@ if __name__ == "__main__":
     get_remote_task_logger()
     q = queue.Queue()
 
-    config = get_config("remote_config.yml")
+    config = get_config("remote.yml")
     remote = RemoteClient(config, q)
     remote.start()
     while True:
