@@ -1,0 +1,8 @@
+mqtt_config:
+  host: 192.168.1.6 # mqtt broker host
+  port: 1883 # mqtt broker port
+  name: "" # leave empty ("") to use current hostname
+  auto_reconnect: true
+  reconnect_delay: 10 # in seconds
+  keep_alive: 60 # in seconds
+  debug_level: 10 # 10 - debug, 20 - info, 40 - error ### not implemended yet
