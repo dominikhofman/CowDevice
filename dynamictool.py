@@ -5,6 +5,7 @@ from cmdhandler import CmdHandler
 from cowdevice import CowDevice
 from characteristicsmenager import CharacteristicsMenager
 from utils import get_config
+import sys 
 
 config = get_config("services.yml")
 
@@ -36,3 +37,15 @@ cow_device = CowDevice(
 cow_device.connect()
 
 manager.run() 
+
+if not cow_device.services_resolved_called:
+    logger.critical("Services not resolved!")
+    # enforce device disconnect to avoid device hanging on system level
+    cow_device.disconnect()
+    sys.exit(4)
+
+if cow_device.write_failed != 0:
+    logger.critical("Some of write chars failed!")
+    # enforce device disconnect to avoid device hanging on system level
+    cow_device.disconnect()
+    sys.exit(5)

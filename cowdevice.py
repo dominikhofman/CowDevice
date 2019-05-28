@@ -12,6 +12,9 @@ class CowDevice(gatt.Device):
         self.logger = logging.getLogger('console')
         self.read_counter = 0
         self.write_counter = 0
+        self.services_resolved_called = False
+        self.write_failed = 0
+
 
     def connect(self):
         self.logger.info('Connecting to %s...', self.mac_address)
@@ -28,7 +31,6 @@ class CowDevice(gatt.Device):
         super().disconnect_succeeded()
         self.logger.info("Disconnected")
         self.manager.stop()
-
         
     def disconnect_failed(self):
         super().disconnect_succeeded()
@@ -37,6 +39,8 @@ class CowDevice(gatt.Device):
 
     def services_resolved(self):
         super().services_resolved()
+        self.services_resolved_called = True
+
         self.parse_servieces()
 
         if self.read_all_switch:
@@ -97,6 +101,7 @@ class CowDevice(gatt.Device):
         name = self.characteristics[characteristic.uuid].name
         self.logger.error("Write for %s failed: %s", name, error)
         self.write_counter -= 1
+        self.write_failed += 1
         self.check_stop_condition()
 
     def password_accepted(self):
@@ -109,4 +114,3 @@ class CowDevice(gatt.Device):
     def check_stop_condition(self):
         if self.read_counter == 0 and self.write_counter == 0:
             self.disconnect()
-
