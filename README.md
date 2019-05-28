@@ -42,7 +42,16 @@ network={
 
 ## 2. Setup raspbian
 
-### Update system and required install tools
+### Increase swap file
+If running on Raspberry pi zero its recommended to increase swap size due to not
+enough RAM on machine requied for building gattlib.
+
+```bash
+sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=1000/g' /etc/dphys-swapfile
+reboot
+```
+
+### Update system and install required tools
 
 ```bash
 apt-get update && apt-get upgrade -y
@@ -53,32 +62,34 @@ apt-get install -y python3-pip git vim
 
 ```bash
 apt-get install -y pkg-config libboost-python-dev libboost-thread-dev libbluetooth-dev libglib2.0-dev python-dev
-
-# fix for building gattlib
-ln -s /usr/lib/arm-linux-gnueabihf/libboost_python-py35.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
-
-```
-
-### Increase swap file
-
-```bash
-sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=1000/g' /etc/dphys-swapfile
-reboot
 ```
 
 ### After reboot clone repo
 
 ```bash
-git clone https://github.com/LazyHater/CowDevice.git
+git clone https://github.com/dominikhofman/CowDevice.git
 ```
 
 ### Install required python modules
 
 ```bash
 cd ./CowDevice
+# minimal module set for dynamictool.py and masstool.py
 pip3 install -r requirements.txt
+# additional dependencies required for remote.py
+pip3 install -r requirements_remote.txt
+# additional dependencies required for running tests
+pip3 install -r requirements_test.txt
 ```
 
+If installing module `pybluez[ble]` fails on building gattlib 
+create symbolic link:
+
+```bash
+# fix for building gattlib
+ln -s /usr/lib/arm-linux-gnueabihf/libboost_python-py35.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
+```
+and try again
 ## 3. Test if tool works
 
 ```bash
@@ -97,6 +108,52 @@ make read
 
 # Usage guide
 
+## Dynamictool usage
+For usage documentation please refer to chapter 6 in
+[my graduation work](docs/inz.pdf)
+
+## Masstool usage
+`Masstool` requires properly configurated `dynamictool`, for usage documentation of `dynamictool` please check point above.
+
+`Masstool` na wejściu otrzymuje
+- plik wejściowy z adresami MAC interesujących nas urządzeń
+- plik wyjściowy z adresami MAC które zostały już przetworzone
+- komenda do uruchomienia dla każdego z urządzeń
+
+plik wejściowy oraz wyjściowy adresy MAC zapisujemy w formacie hexadecymalnym
+gdzie poszczególne bajty oddzielone są znakiem "`:`"
+przykład:
+```
+f0:9e:03:36:54:cf
+c9:8b:0c:34:0d:56
+d1:3d:34:0b:89:5f
+```
+
+Podana komenda można użyć znacznika `{mac}` - zostanie on podmieniony na aktualny adres MAC przetwarzanego urządzenia.
+
+Skrypt rozpoczyna działanie od załadowania pliku wejściowego i wyjściowego. Jeżeli
+plik wyjściowy nie istnieje to zostanie utworzony nowy pusty plik, jeżeli istnieje to 
+zostaną załadowane z niego adresy MAC i te urządzenia będą pomijane w dalszym ciągu programu. Do pliku wyjściowego będą na bierząco dopisywane wpisy z przetworzonymi urządzeniami.
+
+Po załadowaniu plików skrypt zrestartuje moduł bluetooth na urządzeniu i zacznie nasłuchiwanie urządzeń. Gdy skrypt usłyszy adres MAC który jest na liście wejściowej
+oraz nie ma na liście wyjściowej to zostanie wykonana komenda podana przy uruchamianiu skryptu. Maksymalny czas na wykonanie komendy określany jest flagą `--timeout` domyślnie wynosi on 30s. Jeżeli wywołana komenda zwróci kod `0` to skrypt uznaje że urządzenie zostało przetworzone, adres MAC zostanie dodany do pliku wyjściowego. W każdym innym przypadku, czyli jeżeli nastąpi timeout lub komenda zwróci kod inny od `0` to skrypt uznaje że przetwarzanie się nie powiodło i wykonanie powtórzy się przy ponownyn pojawieniu się urządzenia w wynikach skanowania.
+
+Skrypt zakończy działanie kiedy zostaną przetworzone wszyskie zadane urządzenia.
+
+Przykład użycia:
+```bash
+python3 ./masstool.py --devices-to-process ./devices.txt --devices-processed ./devices_done.txt --timeout 30 --cmd "python3 home/pi/CowDeviceMenager/dynamictool.py {mac} --password xxx -s 2 -vvv"
+```
+Zawartość pliku `./devices.txt`
+```
+f0:9e:03:36:54:cf
+c9:8b:0c:34:0d:56
+d1:3d:34:0b:89:5f
+```
+Zawartość pliku `./devices_done.txt`
+```
+f0:9e:03:36:54:cf
+```
 ## Remote usage
 
 ### 1. Setup host and port for MQTT broker in 'remote.yml' file
