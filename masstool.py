@@ -21,7 +21,7 @@ class CDManager(gatt.DeviceManager):
         self.on_success = on_success
 
     def execute(self, mac):
-        cmd = self.cmd.format(mac=mac)
+        cmd = self.cmd.format(mac=mac) if '{mac}' in self.cmd else self.cmd
         print('Executing command: %s' % cmd)
         try:
             result = subprocess.run(cmd.split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=self.timeout)
@@ -110,7 +110,7 @@ def main():
         and will be executed again, under tag {mac} will be passed current devices mac""")
     arg_parser.add_argument(
         '--timeout',
-        default=20,
+        default=30,
         type=int,
         help="""Maximum time for command to execute, after that command is considered to be failed""")
     args = arg_parser.parse_args()
