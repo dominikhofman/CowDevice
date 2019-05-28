@@ -8,6 +8,6 @@ def get_config(file):
     config_path = path_realative_to_script(file)
 
     with open(config_path, 'r') as f:
-        config = yaml.load(f)
+        config = yaml.load(f, Loader=yaml.FullLoader)
         
     return config
