@@ -19,6 +19,7 @@ class CDManager(gatt.DeviceManager):
         self.cmd = cmd
         self.timeout = timeout
         self.on_success = on_success
+        self.try_again_later_set = set()
 
     def execute(self, mac):
         cmd = self.cmd.format(mac=mac) if '{mac}' in self.cmd else self.cmd
@@ -57,17 +58,24 @@ class CDManager(gatt.DeviceManager):
 
         # skip if already processed
         if mac in self.devices_processed:
-            print("[%s] Discovered, alias = %s DONE" % (mac, alias))
+            print("[%s](%s) DONE" % (mac, alias))
             return
 
-        print("[%s] Discovered, alias = %s PROCESSING..." % (mac, alias))
+        # remove from try_again_later_set and skip
+        if mac in self.try_again_later_set:
+            print("[%s](%s) IN TRY AGAIN LATER SET SKIPPING..." % (mac, alias))
+            self.try_again_later_set.remove(mac)
+            return
+
+        print("[%s](%s) PROCESSING..." % (mac, alias))
         self.stop_discovery()
-        print('EXECUTE ON %s' % mac)
+        print('[%s](%s) EXECUTE COMMAND' % (mac, alias))
         rcode = self.execute(mac)
         if rcode != 0:
-            print('FAILED %s' % mac) 
+            print('[%s](%s) FAILED!' % (mac, alias))
+            self.try_again_later_set.add(mac)
         else:
-            print('SUCCEDED %s' % mac) 
+            print('[%s](%s) SUCCEDED!' % (mac, alias))
             self.devices_processed.add(mac)
             self.on_success(mac)
 
