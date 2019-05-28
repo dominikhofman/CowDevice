@@ -1,0 +1,1 @@
+ echo "power on" | bluetoothctl &&  echo "power off" | bluetoothctl 
