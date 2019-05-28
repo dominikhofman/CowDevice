@@ -1,0 +1,1 @@
+python3 /home/pi/CowDeviceMenager/dynamictool.py $1 --password .Mafiozo#102. -s 2 -vvv
