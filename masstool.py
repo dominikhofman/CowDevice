@@ -39,7 +39,7 @@ class CDManager(gatt.DeviceManager):
         totalcnt = len(self.devices_to_process)
         lcnt = len(self.devices_processed)
         ldevices = self.devices_to_process - self.devices_processed
-        print ("DONE %s/%s left devices: <%s>" % (lcnt, totalcnt, ldevices))
+        print ("DONE %s/%s" % (lcnt, totalcnt))
 
     def device_discovered(self, device):
         # check stop condition
