@@ -88,6 +88,9 @@ create symbolic link:
 ```bash
 # fix for building gattlib
 ln -s /usr/lib/arm-linux-gnueabihf/libboost_python-py35.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
+# or
+ln -s /usr/lib/arm-linux-gnueabihf/libboost_python3-py37.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
+# if libboost_python-py35.so does not exists
 ```
 and try again
 ## 3. Test if tool works
