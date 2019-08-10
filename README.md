@@ -109,6 +109,25 @@ make write
 make read
 ```
 
+in case of not working, try following steps:
+
+```bash
+sudo vim /etc/systemd/system/bluetooth.target.wants/bluetooth.service
+# replace
+ExecStart=/usr/lib/bluetooth/bluetoothd
+# with
+ExecStart=/usr/lib/bluetooth/bluetoothd -d --compat --noplugin=sap -E
+
+
+sudo systemctl daemon-reload
+sudo service bluetooth restart
+
+run masstool
+
+sudo bluetoothctl
+scan on
+```
+
 # Usage guide
 
 ## Dynamictool usage
