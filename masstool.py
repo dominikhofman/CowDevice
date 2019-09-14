@@ -68,7 +68,6 @@ class CDManager(gatt.DeviceManager):
             return
 
         print("[%s](%s) PROCESSING..." % (mac, alias))
-        self.stop_discovery()
         print('[%s](%s) EXECUTE COMMAND' % (mac, alias))
         rcode = self.execute(mac)
         if rcode != 0:
@@ -80,7 +79,6 @@ class CDManager(gatt.DeviceManager):
             self.on_success(mac)
 
         self.print_left_devices()
-        self.start_discovery()
 
 def load_macs(fname):
     if fname is None:
@@ -140,11 +138,6 @@ def main():
         timeout=args.timeout,
         on_success=on_success)
         
-    print ('Power off')
-    device_manager.is_adapter_powered = False
-    print ('Power on')
-    device_manager.is_adapter_powered = True
-
     device_manager.print_left_devices()
     device_manager.start_discovery()
 

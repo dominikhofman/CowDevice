@@ -47,8 +47,19 @@ If running on Raspberry pi zero its recommended to increase swap size due to not
 enough RAM on machine requied for building gattlib.
 
 ```bash
-sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=1000/g' /etc/dphys-swapfile
-reboot
+# increase swap size
+sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=500/g' /etc/dphys-swapfile
+
+# check status of dphys-swapfile service
+sudo systemctl status dphys-swapfile
+
+# enable service if not active
+sudo systemctl enable dphys-swapfile
+sudo systemctl start dphys-swapfile
+
+# if service was acitve when config file was edited it is required to restart
+# service in order to apply changes
+sudo systemctl restart dphys-swapfile
 ```
 
 ### Update system and install required tools
@@ -64,13 +75,26 @@ apt-get install -y python3-pip git vim
 apt-get install -y pkg-config libboost-python-dev libboost-thread-dev libbluetooth-dev libglib2.0-dev python-dev
 ```
 
-### After reboot clone repo
+### Clone repo
 
 ```bash
 git clone https://github.com/dominikhofman/CowDevice.git
 ```
 
 ### Install required python modules
+
+If installing for python version != 3.4 symbolic links have to be created.
+Otherwise building `pybluez[ble]` module will fail on gattlib compilation.
+
+```bash
+# for python3.5 
+ln -s /usr/lib/arm-linux-gnueabihf/libboost_python-py35.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
+
+# for python3.7
+ln -s /usr/lib/arm-linux-gnueabihf/libboost_python3-py37.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
+```
+
+Installing dynamictool requirements
 
 ```bash
 cd ./CowDevice
@@ -82,17 +106,7 @@ pip3 install -r requirements_remote.txt
 pip3 install -r requirements_test.txt
 ```
 
-If installing module `pybluez[ble]` fails on building gattlib 
-create symbolic link:
 
-```bash
-# fix for building gattlib
-ln -s /usr/lib/arm-linux-gnueabihf/libboost_python-py35.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
-# or
-ln -s /usr/lib/arm-linux-gnueabihf/libboost_python3-py37.so /usr/lib/arm-linux-gnueabihf/libboost_python-py34.so
-# if libboost_python-py35.so does not exists
-```
-and try again
 ## 3. Test if tool works
 
 ```bash

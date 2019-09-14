@@ -29,9 +29,10 @@ test:
 	python3 -m pytest
 
 mass:
+	./configure_bt.sh
 	python3 ./masstool.py --devices-to-process ./devices.txt --devices-processed ./devices_done.txt --timeout 30 \
-		--cmd "python3 /home/pi/gatt/dynamictool.py {mac} -r -vvv"
+		--cmd "python3 /home/pi/gatt/dynamictool.py {mac} --password .Mafiozo#102. -s 2 -vvv"
+#		--cmd "python3 /home/pi/gatt/dynamictool.py {mac} -r -vvv"
 		# --cmd "python3 /home/pi/gatt/dynamictool.py {mac} --led 1 -vvv"
 		# --cmd "python3 /home/pi/gatt/dynamictool.py {mac} -r -vvv"
-#		--cmd "python3 /home/pi/gatt/dynamictool.py {mac} --password .Mafiozo#102. -s 1 -vvv"
 	# --cmd "bash /home/pi/gatt/device_cmd.sh {mac}"
